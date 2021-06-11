@@ -1,22 +1,42 @@
-import { createStore, applyMiddleware } from "redux";
-import { persistStore } from "redux-persist";
-import logger from "redux-logger";
-import createSagaMiddleware from "redux-saga";
+//import { createStore, applyMiddleware } from "redux";
+import { configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
 
-import rootReducer from "./root-.reducer";
-import rootSaga from "./root.saga";
+import logger from 'redux-logger';
+import { persistStore } from 'redux-persist';
+import createSagaMiddleware from 'redux-saga';
+//import { composeWithDevTools } from 'redux-devtools-extension';
+import rootReducer from './root.reducer';
+import rootSaga from './root.saga';
 
-const sagaMiddleware = createSagaMiddleware();
-const middlewares = [sagaMiddleware];
+// const sagaMiddleware = createSagaMiddleware();
+// const middlewares = [sagaMiddleware];
 
-if (process.env.NODE_ENV === "development") {
-  middlewares.push(logger);
-}
+// if (process.env.NODE_ENV === "development") {
+//   middlewares.push(logger);
+// }
 
-export const store = createStore(rootReducer, applyMiddleware(...middlewares));
+// export const store = createStore(rootReducer, composeWithDevTools(applyMiddleware(...middlewares)));
 
-sagaMiddleware.run(rootSaga);
+// sagaMiddleware.run(rootSaga);
 
-export const persistor = persistStore(store);
+const configureAdminStore = (initialState = {}) => {
+  const sagaMiddleware = createSagaMiddleware();
 
-export default { store, persistStore };
+  // sagaMiddleware: Makes redux-sagas work
+  const middlewares = [sagaMiddleware, logger];
+
+  const store = configureStore({
+    reducer: rootReducer,
+    middleware: [...getDefaultMiddleware({ thunk: false }), ...middlewares],
+    preloadedState: initialState,
+    devTools: process.env.NODE_ENV !== 'production',
+  });
+
+  sagaMiddleware.run(rootSaga);
+
+  return store;
+};
+
+export const store = configureAdminStore();
+
+export const persistor = persistStore(configureAdminStore());
